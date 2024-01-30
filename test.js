@@ -49,6 +49,36 @@ tape('getStudentById', async function (t) {
   }
 })
 
+tape('getStudentWithGradesById', async function (t) {
+  const urlPrefix = `${endpoint}/student`
+
+  try {
+    const { response } = await jsonist.get(`${urlPrefix}/foo/grades`)
+
+    t.equal(response.statusCode, 400, 'Shoud fail request validation')
+  } catch (e) {
+    t.error(e)
+  }
+
+  try {
+    const { data } = await jsonist.get(`${urlPrefix}/1/grades`)
+
+    t.ok(data, 'Should return sucessful response')
+    t.equal(data.id, 1, 'Should return student with `id` equals to 1')
+    t.ok(data.grades, 'Should contain student grades')
+  } catch (e) {
+    t.error(e)
+  }
+
+  try {
+    const { response } = await jsonist.get(`${urlPrefix}/111111111111/grades`)
+
+    t.equal(response.statusCode, 404, 'Should return not found')
+  } catch (e) {
+    t.error(e)
+  }
+})
+
 tape('cleanup', function (t) {
   server.closeDB()
   server.close()
