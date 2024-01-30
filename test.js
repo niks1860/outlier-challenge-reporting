@@ -79,6 +79,18 @@ tape('getStudentWithGradesById', async function (t) {
   }
 })
 
+tape('getCourseStats', async function (t) {
+  const url = `${endpoint}/course/all/grades`
+
+  try {
+    const { data } = await jsonist.get(url)
+
+    t.ok(data, 'Should return sucessful response')
+  } catch (e) {
+    t.error(e)
+  }
+})
+
 tape('cleanup', function (t) {
   server.closeDB()
   server.close()
