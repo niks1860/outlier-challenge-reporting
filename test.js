@@ -20,6 +20,35 @@ tape('health', async function (t) {
   }
 })
 
+tape('getStudentById', async function (t) {
+  const urlPrefix = `${endpoint}/student`
+
+  try {
+    const { response } = await jsonist.get(`${urlPrefix}/foo`)
+
+    t.equal(response.statusCode, 400, 'Shoud fail request validation')
+  } catch (e) {
+    t.error(e)
+  }
+
+  try {
+    const { data } = await jsonist.get(`${urlPrefix}/1`)
+
+    t.ok(data, 'Should return sucessful response')
+    t.equal(data.id, 1, 'Should return student with `id` equals to 1')
+  } catch (e) {
+    t.error(e)
+  }
+
+  try {
+    const { response } = await jsonist.get(`${urlPrefix}/111111111111`)
+
+    t.equal(response.statusCode, 404, 'Should return not found')
+  } catch (e) {
+    t.error(e)
+  }
+})
+
 tape('cleanup', function (t) {
   server.closeDB()
   server.close()
