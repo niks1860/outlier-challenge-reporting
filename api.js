@@ -33,6 +33,8 @@ async function getStudent(req, res, next) {
       return res.status(404).json({ error: 'Student not found' }).end()
     }
 
+    delete student.password_hash
+
     res.status(200).json(student).end()
   } catch (e) {
     console.log(e)
