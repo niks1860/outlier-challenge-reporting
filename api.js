@@ -1,3 +1,4 @@
+const { getStudentById } = require('./crud/students')
 const knex = require('./db')
 
 const service = require('./service')
@@ -27,50 +28,33 @@ async function getHealth(req, res, next) {
 
 async function getStudent(req, res, next) {
   const id = parseInt(req.params.id)
-
   if (!id) {
     return next(badRequest('The student id must be a positive integer'))
   }
 
-  try {
-    const student = await knex('students').where({ id }).first()
-    if (!student) {
-      return next(notFound('Student not found'))
-    }
-
-    delete student.password_hash
-
-    res.status(200).json(student).end()
-  } catch (e) {
-    console.log(e)
-    res.status(500).end()
+  const student = await getStudentById(id)
+  if (!student) {
+    return next(notFound('Student not found'))
   }
+
+  res.json(student)
 }
 
 async function getStudentGradesReport(req, res, next) {
   const id = parseInt(req.params.id)
-
   if (!id) {
     return next(badRequest('The student id must be a positive integer'))
   }
 
+  const student = await getStudentById(id)
+  if (!student) {
+    return next(notFound('Student not found'))
+  }
+
   try {
-    const student = await knex('students').where({ id }).first()
-    if (!student) {
-      return next(notFound('Student not found'))
-    }
-
-    delete student.password_hash
-
     const grades = await service.getGrades()
-    const studentGrades = grades
-      .filter(item => item.id === student.id)
-      .map(({ course, grade }) => ({ course, grade }))
-
-    res.status(200).json({
-      ...student,
-      grades: studentGrades
-    }).end()
+    const studentGrades = grades.filter(item => item.id === student.id)
+    res.json({ ...student, grades: studentGrades })
   } catch (e) {
     console.log(e)
     res.status(500).end()
