@@ -2,6 +2,7 @@ const knex = require('./db')
 
 const service = require('./service')
 const { reduceInBatch } = require('./utils/batch')
+const { badRequest, notFound } = require('./utils/errors')
 
 module.exports = {
   getHealth,
@@ -28,16 +29,13 @@ async function getStudent(req, res, next) {
   const id = parseInt(req.params.id)
 
   if (!id) {
-    return res.status(400).json({
-      error: 'The student id must be of type integer'
-    }).end()
+    return next(badRequest('The student id must be a positive integer'))
   }
 
   try {
     const student = await knex('students').where({ id }).first()
-
     if (!student) {
-      return res.status(404).json({ error: 'Student not found' }).end()
+      return next(notFound('Student not found'))
     }
 
     delete student.password_hash
@@ -53,16 +51,13 @@ async function getStudentGradesReport(req, res, next) {
   const id = parseInt(req.params.id)
 
   if (!id) {
-    return res.status(400).json({
-      error: 'The student id must be of type integer'
-    }).end()
+    return next(badRequest('The student id must be a positive integer'))
   }
 
   try {
     const student = await knex('students').where({ id }).first()
-
     if (!student) {
-      return res.status(404).json({ error: 'Student not found' }).end()
+      return next(notFound('Student not found'))
     }
 
     delete student.password_hash
