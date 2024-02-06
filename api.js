@@ -2,7 +2,6 @@ const { getStudentById } = require('./crud/students')
 const knex = require('./db')
 
 const service = require('./service')
-const { reduceInBatch } = require('./utils/batch')
 const { badRequest, notFound } = require('./utils/errors')
 
 module.exports = {
@@ -65,37 +64,45 @@ async function getCourseGradesReport(req, res, next) {
   try {
     const grades = await service.getGrades()
 
-    const process = function (res, data) {
-      data.forEach(item => {
-        const [highest, lowest, sum, count] = res[item.course] || [0, 0, 0, 0]
-        res[item.course] = [
+    const summary = {}
+    const batchSize = 10000
+
+    // Process the items in batches to keep the main thread unblocked
+    const process = function (data) {
+      if (!data || !data.length) {
+        // no more items available, prepare and return result response
+        const result = Object.entries(summary)
+          .map(([course, value]) => {
+            const [highest, lowest, sum, count] = value
+            return ({
+              course,
+              highest,
+              lowest,
+              average: Math.round(sum / count)
+            })
+          })
+          .sort((a, b) => a.course.localeCompare(b.course))
+
+        return res.json(result)
+      }
+
+      // process current batch
+      data.slice(0, batchSize).forEach(item => {
+        const [highest, lowest, sum, count] = summary[item.course] || [0, 0, 0, 0]
+
+        summary[item.course] = [
           Math.max(highest, item.grade),
           Math.min(lowest, item.grade),
           sum + item.grade,
           count + 1
         ]
       })
-      return res
+
+      // schedule next batch
+      setImmediate(() => process(data.slice(batchSize)))
     }
 
-    const stats = await reduceInBatch(
-      grades, process, { batchSize: 10000, initialValue: {} }
-    )
-
-    const data = Object.keys(stats)
-      .sort((a, b) => a.localeCompare(b))
-      .map(course => {
-        const [highest, lowest, sum, count] = stats[course]
-
-        return ({
-          course,
-          highest,
-          lowest,
-          average: Math.round(sum / count)
-        })
-      })
-
-    res.status(200).json(data).end()
+    process(grades)
   } catch (e) {
     console.log(e)
     res.status(500).end()
