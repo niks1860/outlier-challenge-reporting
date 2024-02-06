@@ -27,8 +27,8 @@ async function getHealth(req, res, next) {
 }
 
 async function getStudent(req, res, next) {
-  const id = parseInt(req.params.id)
-  if (!id) {
+  const id = req.params.id
+  if (!/^\d+$/.test(id)) {
     return next(badRequest('The student id must be a positive integer'))
   }
 
@@ -41,8 +41,8 @@ async function getStudent(req, res, next) {
 }
 
 async function getStudentGradesReport(req, res, next) {
-  const id = parseInt(req.params.id)
-  if (!id) {
+  const id = req.params.id
+  if (!/^\d+$/.test(id)) {
     return next(badRequest('The student id must be a positive integer'))
   }
 
